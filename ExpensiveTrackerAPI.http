@@ -1,0 +1,6 @@
+@ExpensiveTrackerAPI_HostAddress = http://localhost:5006
+
+GET {{ExpensiveTrackerAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

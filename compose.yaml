@@ -1,0 +1,7 @@
+﻿services:
+  expensivetrackerapi:
+    image: expensivetrackerapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+
