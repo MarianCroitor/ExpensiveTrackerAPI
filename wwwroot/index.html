@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpensiveTracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <h1>ExpensiveTracker</h1>
+
+    <section id="auth" class="grid">
+      <div class="card">
+        <h2>Вход</h2>
+        <form id="loginForm">
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Пароль
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Войти</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
+          <label>
+            Имя
+            <input type="text" name="name" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Пароль
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Создать</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="app" class="hidden">
+      <div class="toolbar">
+        <div>
+          <h2 id="welcome">Пользователь</h2>
+          <p class="muted" id="userEmail"></p>
+        </div>
+        <div class="actions">
+          <button id="refreshBtn" class="ghost">Обновить</button>
+          <button id="logoutBtn" class="ghost">Выйти</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Категории</h3>
+          <div id="categories"></div>
+        </div>
+
+        <div class="card">
+          <h3>Новая транзакция</h3>
+          <form id="transactionForm">
+            <label>
+              Категория
+              <select id="categorySelect" required></select>
+            </label>
+            <label>
+              Сумма
+              <input type="number" step="0.01" name="amount" required />
+            </label>
+            <label>
+              Описание
+              <input type="text" name="description" />
+            </label>
+            <label>
+              Дата
+              <input type="date" name="date" />
+            </label>
+            <button type="submit">Добавить</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <div id="message" class="message hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,10 +1,13 @@
 using ExpensiveTrackerAPI.DTOs;
 using ExpensiveTrackerAPI.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
 [Route("api/users/{userId:int}/categories")]
+[Authorize]
 public class CategoryController: ControllerBase
 {
     
@@ -21,6 +24,11 @@ public class CategoryController: ControllerBase
        if (userId <= 0)
        {
            return BadRequest();
+       }
+
+       if (!IsSameUser(userId))
+       {
+           return Forbid();
        }
 
        var categories  = await  _categoryService.GetCategoriesAsync(userId);
@@ -55,6 +63,10 @@ public class CategoryController: ControllerBase
         {
             return BadRequest();
         }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
+        }
         var category = await _categoryService.GetCategoryAsync(userId, id);
         if (category == null)
         {
@@ -78,7 +90,17 @@ public class CategoryController: ControllerBase
 
         return Ok(result);
     }
-    
-    
-    
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var id) ? id : null;
+    }
+
+    private bool IsSameUser(int userId)
+    {
+        var currentUserId = GetCurrentUserId();
+        return currentUserId != null && currentUserId.Value == userId;
+    }
+
 }

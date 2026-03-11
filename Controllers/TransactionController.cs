@@ -1,10 +1,13 @@
 using ExpensiveTrackerAPI.Interfaces;
 using ExpensiveTrackerAPI.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
 [Route("api/users/{userId:int}")]
+[Authorize]
 public class TransactionController : ControllerBase
 {
     private readonly ITransactionService _transactionService;
@@ -20,6 +23,10 @@ public class TransactionController : ControllerBase
         if (userId <= 0)
         {
             return BadRequest();
+        }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
         }
 
         var trans =  await _transactionService.GetTransactionsAsync(userId);
@@ -41,6 +48,10 @@ public class TransactionController : ControllerBase
         if (userId <= 0 || categoryId <= 0)
         {
             return BadRequest();
+        }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
         }
 
         var trans = await _transactionService.GetCategoryTransactionsAsync(userId, categoryId);
@@ -67,6 +78,10 @@ public class TransactionController : ControllerBase
         if (userId <= 0 || id <= 0)
         {
             return BadRequest();
+        }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
         }
 
         var trans = await _transactionService.GetTransactionAsync(userId, id);
@@ -96,6 +111,10 @@ public class TransactionController : ControllerBase
         if (userId <= 0 || categoryId <= 0)
         {
             return BadRequest();
+        }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
         }
 
         var created = await _transactionService.CreateTransactionAsync(
@@ -132,6 +151,10 @@ public class TransactionController : ControllerBase
         {
             return BadRequest();
         }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
+        }
 
         var updatedTrans = await _transactionService.UpdateTransactionAsync(
             userId,
@@ -163,6 +186,10 @@ public class TransactionController : ControllerBase
         {
             return BadRequest();
         }
+        if (!IsSameUser(userId))
+        {
+            return Forbid();
+        }
 
         var deleted = await _transactionService.DeleteTransactionAsync(userId, id);
         if (!deleted)
@@ -173,4 +200,16 @@ public class TransactionController : ControllerBase
         return NoContent();
     }
     
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var id) ? id : null;
+    }
+
+    private bool IsSameUser(int userId)
+    {
+        var currentUserId = GetCurrentUserId();
+        return currentUserId != null && currentUserId.Value == userId;
+    }
+
 }

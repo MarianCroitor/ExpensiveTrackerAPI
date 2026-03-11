@@ -1,11 +1,14 @@
 using ExpensiveTrackerAPI.DTOs;
 using ExpensiveTrackerAPI.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
 [Route("api/users")]
+[Authorize]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -18,28 +21,19 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
-        var users = await _userService.GetUsersAsync();
-        var result = users.Select(u => new UserDto
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
         {
-            Id = u.Id,
-            Name = u.Name,
-            Email = u.Email,
-            Categories = u.Categories.Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Type = c.Type,
-                Transactions = c.Transactions.Select(t => new TransactionDto
-                {
-                    Id = t.Id,
-                    Amount = t.Amount,
-                    Description = t.Description,
-                    Date = t.Date,
-                    CategoryId = t.CategoryId
-                }).ToList()
-            }).ToList()
-        }).ToList();
+            return Unauthorized();
+        }
 
+        var user = await _userService.GetUserAsync(currentUserId.Value);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        var result = new List<UserDto> { MapUser(user) };
         return Ok(result);
     }
 
@@ -51,46 +45,59 @@ public class UserController : ControllerBase
             return BadRequest();
         }
 
+        if (!IsSameUser(id))
+        {
+            return Forbid();
+        }
+
         var user = await _userService.GetUserAsync(id);
         if (user == null)
         {
             return NotFound();
         }
 
-        var result = new UserDto
-        {
-            Id = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            Categories = user.Categories.Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Type = c.Type,
-                Transactions = c.Transactions.Select(t => new TransactionDto
-                {
-                    Id = t.Id,
-                    Amount = t.Amount,
-                    Description = t.Description,
-                    Date = t.Date,
-                    CategoryId = t.CategoryId
-                }).ToList()
-            }).ToList()
-        };
-
-        return Ok(result);
+        return Ok(MapUser(user));
     }
 
     [HttpPost]
+    [AllowAnonymous]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Email))
+        if (string.IsNullOrWhiteSpace(request.Name) ||
+            string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Password))
         {
             return BadRequest();
         }
 
-        var user = await _userService.CreateUserAsync(request.Name.Trim(), request.Email.Trim());
-        var result = new UserDto
+        var user = await _userService.CreateUserAsync(
+            request.Name.Trim(),
+            request.Email.Trim(),
+            request.Password);
+
+        if (user == null)
+        {
+            return Conflict();
+        }
+
+        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, MapUser(user));
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var id) ? id : null;
+    }
+
+    private bool IsSameUser(int userId)
+    {
+        var currentUserId = GetCurrentUserId();
+        return currentUserId != null && currentUserId.Value == userId;
+    }
+
+    private static UserDto MapUser(Models.User user)
+    {
+        return new UserDto
         {
             Id = user.Id,
             Name = user.Name,
@@ -110,7 +117,5 @@ public class UserController : ControllerBase
                 }).ToList()
             }).ToList()
         };
-
-        return CreatedAtAction(nameof(GetUser), new { id = user.Id }, result);
     }
 }
