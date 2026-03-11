@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users/{userId:int}")]
 public class TransactionController : ControllerBase
 {
     private readonly ITransactionService _transactionService;
@@ -14,56 +14,127 @@ public class TransactionController : ControllerBase
         _transactionService = transactionService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetTransactions()
+    [HttpGet("transactions")]
+    public async Task<IActionResult> GetTransactions([FromRoute] int userId)
     {
-        var trans =  await _transactionService.GetTransactionsAsync();
-        return Ok(trans);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetTransaction([FromRoute] int id)
-    {
-        if (id<=0)
+        if (userId <= 0)
         {
             return BadRequest();
         }
-        var trans =  await _transactionService.GetTransactionAsync(id);
+
+        var trans =  await _transactionService.GetTransactionsAsync(userId);
+        var result = trans.Select(t => new TransactionDto
+        {
+            Id = t.Id,
+            Amount = t.Amount,
+            Description = t.Description,
+            Date = t.Date,
+            CategoryId = t.CategoryId
+        }).ToList();
+
+        return Ok(result);
+    }
+
+    [HttpGet("categories/{categoryId:int}/transactions")]
+    public async Task<IActionResult> GetCategoryTransactions([FromRoute] int userId, [FromRoute] int categoryId)
+    {
+        if (userId <= 0 || categoryId <= 0)
+        {
+            return BadRequest();
+        }
+
+        var trans = await _transactionService.GetCategoryTransactionsAsync(userId, categoryId);
         if (trans == null)
         {
             return NotFound();
         }
-        return Ok(trans);
+
+        var result = trans.Select(t => new TransactionDto
+        {
+            Id = t.Id,
+            Amount = t.Amount,
+            Description = t.Description,
+            Date = t.Date,
+            CategoryId = t.CategoryId
+        }).ToList();
+
+        return Ok(result);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> PostTransactionAsync([FromBody] CreateTransactionRequest transBody)
+    [HttpGet("transactions/{id:int}")]
+    public async Task<IActionResult> GetTransaction([FromRoute] int userId, [FromRoute] int id)
     {
-        if (transBody.CategoryId <= 0)
+        if (userId <= 0 || id <= 0)
         {
             return BadRequest();
         }
+
+        var trans = await _transactionService.GetTransactionAsync(userId, id);
+        if (trans == null)
+        {
+            return NotFound();
+        }
+
+        var result = new TransactionDto
+        {
+            Id = trans.Id,
+            Amount = trans.Amount,
+            Description = trans.Description,
+            Date = trans.Date,
+            CategoryId = trans.CategoryId
+        };
+
+        return Ok(result);
+    }
+
+    [HttpPost("categories/{categoryId:int}/transactions")]
+    public async Task<IActionResult> PostTransactionAsync(
+        [FromRoute] int userId,
+        [FromRoute] int categoryId,
+        [FromBody] CreateTransactionRequest transBody)
+    {
+        if (userId <= 0 || categoryId <= 0)
+        {
+            return BadRequest();
+        }
+
         var created = await _transactionService.CreateTransactionAsync(
+            userId,
+            categoryId,
             transBody.Amount,
             transBody.Description,
-            transBody.Date,
-            transBody.CategoryId
+            transBody.Date
         );
         if (created == null)
         {
             return NotFound();
         }
-        return CreatedAtAction(nameof(GetTransaction), new { id = created.Id }, created);
+
+        var result = new TransactionDto
+        {
+            Id = created.Id,
+            Amount = created.Amount,
+            Description = created.Description,
+            Date = created.Date,
+            CategoryId = created.CategoryId
+        };
+
+        return CreatedAtAction(nameof(GetTransaction), new { userId = userId, id = created.Id }, result);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutTransactionAsync([FromRoute] int id, [FromBody] UpdateTransactionRequest transBody)
+    [HttpPut("transactions/{id:int}")]
+    public async Task<IActionResult> PutTransactionAsync(
+        [FromRoute] int userId,
+        [FromRoute] int id,
+        [FromBody] UpdateTransactionRequest transBody)
     {
-        if (id <= 0)
+        if (userId <= 0 || id <= 0)
         {
             return BadRequest();
         }
+
         var updatedTrans = await _transactionService.UpdateTransactionAsync(
+            userId,
             id,
             transBody.Amount,
             transBody.Description
@@ -72,21 +143,33 @@ public class TransactionController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(updatedTrans);
+
+        var result = new TransactionDto
+        {
+            Id = updatedTrans.Id,
+            Amount = updatedTrans.Amount,
+            Description = updatedTrans.Description,
+            Date = updatedTrans.Date,
+            CategoryId = updatedTrans.CategoryId
+        };
+
+        return Ok(result);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTransactionAsync([FromRoute] int id)
+    [HttpDelete("transactions/{id:int}")]
+    public async Task<IActionResult> DeleteTransactionAsync([FromRoute] int userId, [FromRoute] int id)
     {
-        if (id <= 0)
+        if (userId <= 0 || id <= 0)
         {
             return BadRequest();
         }
-        var deleted = await _transactionService.DeleteTransactionAsync(id);
+
+        var deleted = await _transactionService.DeleteTransactionAsync(userId, id);
         if (!deleted)
         {
             return NotFound();
         }
+
         return NoContent();
     }
     

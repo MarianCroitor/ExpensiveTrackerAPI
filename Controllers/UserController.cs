@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -21,13 +21,22 @@ public class UserController : ControllerBase
         var users = await _userService.GetUsersAsync();
         var result = users.Select(u => new UserDto
         {
+            Id = u.Id,
             Name = u.Name,
             Email = u.Email,
             Categories = u.Categories.Select(c => new CategoryDto
             {
                 Id = c.Id,
                 Name = c.Name,
-                Type = c.Type
+                Type = c.Type,
+                Transactions = c.Transactions.Select(t => new TransactionDto
+                {
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Description = t.Description,
+                    Date = t.Date,
+                    CategoryId = t.CategoryId
+                }).ToList()
             }).ToList()
         }).ToList();
 
@@ -50,13 +59,22 @@ public class UserController : ControllerBase
 
         var result = new UserDto
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
             Categories = user.Categories.Select(c => new CategoryDto
             {
                 Id = c.Id,
                 Name = c.Name,
-                Type = c.Type
+                Type = c.Type,
+                Transactions = c.Transactions.Select(t => new TransactionDto
+                {
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Description = t.Description,
+                    Date = t.Date,
+                    CategoryId = t.CategoryId
+                }).ToList()
             }).ToList()
         };
 
@@ -74,13 +92,22 @@ public class UserController : ControllerBase
         var user = await _userService.CreateUserAsync(request.Name.Trim(), request.Email.Trim());
         var result = new UserDto
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
             Categories = user.Categories.Select(c => new CategoryDto
             {
                 Id = c.Id,
                 Name = c.Name,
-                Type = c.Type
+                Type = c.Type,
+                Transactions = c.Transactions.Select(t => new TransactionDto
+                {
+                    Id = t.Id,
+                    Amount = t.Amount,
+                    Description = t.Description,
+                    Date = t.Date,
+                    CategoryId = t.CategoryId
+                }).ToList()
             }).ToList()
         };
 

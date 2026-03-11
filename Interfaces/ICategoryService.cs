@@ -4,6 +4,6 @@ namespace ExpensiveTrackerAPI.Interfaces;
 
 public interface ICategoryService
 {
-    Task<List<Category>> GetCategoriesAsync();
-    Task<Category?> GetCategoryAsync(int id);
+    Task<List<Category>> GetCategoriesAsync(int userId);
+    Task<Category?> GetCategoryAsync(int userId, int categoryId);
 }

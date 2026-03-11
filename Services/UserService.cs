@@ -18,6 +18,7 @@ public class UserService : IUserService
     {
         return await _context.Users
             .Include(u => u.Categories)
+            .ThenInclude(c => c.Transactions)
             .ToListAsync();
     }
 
@@ -25,6 +26,7 @@ public class UserService : IUserService
     {
         return await _context.Users
             .Include(u => u.Categories)
+            .ThenInclude(c => c.Transactions)
             .FirstOrDefaultAsync(u => u.Id == id);
     }
 
@@ -34,13 +36,13 @@ public class UserService : IUserService
         {
             Name = name,
             Email = email,
-            CreatedAt = DateTime.UtcNow,
-            Categories = new List<Category>
-            {
-                new() { Name = "Income", Type = TransactionType.Income },
-                new() { Name = "Expense", Type = TransactionType.Expense },
-                new() { Name = "Investment", Type = TransactionType.Investment }
-            }
+            CreatedAt = DateTime.UtcNow
+        };
+        user.Categories = new List<Category>
+        {
+            new() { Name = "Income", Type = TransactionType.Income, User = user },
+            new() { Name = "Expense", Type = TransactionType.Expense, User = user },
+            new() { Name = "Investment", Type = TransactionType.Investment, User = user }
         };
 
         await _context.Users.AddAsync(user);

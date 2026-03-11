@@ -11,24 +11,41 @@ public class TransactionService : ITransactionService
     {
         _context = context;
     }
-    public async Task<List<Transaction>> GetTransactionsAsync()
+    public async Task<List<Transaction>> GetTransactionsAsync(int userId)
     {
         return await _context.Transactions
             .Include(t => t.Category)
+            .Where(t => t.Category != null && t.Category.UserId == userId)
             .ToListAsync();
     }
 
-    public async Task<Transaction?> GetTransactionAsync(int id)
+    public async Task<List<Transaction>?> GetCategoryTransactionsAsync(int userId, int categoryId)
+    {
+        var categoryExists = await _context.Categories
+            .AnyAsync(c => c.Id == categoryId && c.UserId == userId);
+        if (!categoryExists)
+        {
+            return null;
+        }
+
+        return await _context.Transactions
+            .Include(t => t.Category)
+            .Where(t => t.CategoryId == categoryId)
+            .ToListAsync();
+    }
+
+    public async Task<Transaction?> GetTransactionAsync(int userId, int id)
     {
         return await _context.Transactions
             .Include(t => t.Category)
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id && t.Category != null && t.Category.UserId == userId);
     }
 
-    public async Task<Transaction?> CreateTransactionAsync(decimal amount, string description, DateTime date, int categoryId)
+    public async Task<Transaction?> CreateTransactionAsync(int userId, int categoryId, decimal amount, string description, DateTime date)
     {
-        var categoryExists = await _context.Categories.AnyAsync(c => c.Id == categoryId);
-        if (!categoryExists)
+        var category = await _context.Categories
+            .FirstOrDefaultAsync(c => c.Id == categoryId && c.UserId == userId);
+        if (category == null)
         {
             return null;
         }
@@ -37,7 +54,7 @@ public class TransactionService : ITransactionService
             Amount = amount,
             Description = description,
             Date = date,
-            CategoryId = categoryId
+            CategoryId = category.Id
 
         };
         await _context.Transactions.AddAsync(trans);
@@ -45,9 +62,11 @@ public class TransactionService : ITransactionService
         return trans;
     }
     
-    public async Task<Transaction?> UpdateTransactionAsync(int id, decimal amount, string description)
+    public async Task<Transaction?> UpdateTransactionAsync(int userId, int id, decimal amount, string description)
     {
-        var trans = await _context.Transactions.FindAsync(id);
+        var trans = await _context.Transactions
+            .Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id && t.Category != null && t.Category.UserId == userId);
         if (trans == null)
         {
             return null;
@@ -58,9 +77,11 @@ public class TransactionService : ITransactionService
         return trans;
     }
 
-    public async Task<bool> DeleteTransactionAsync(int id)
+    public async Task<bool> DeleteTransactionAsync(int userId, int id)
     {
-        var trans =  await _context.Transactions.FindAsync(id);
+        var trans = await _context.Transactions
+            .Include(t => t.Category)
+            .FirstOrDefaultAsync(t => t.Id == id && t.Category != null && t.Category.UserId == userId);
         if (trans == null)
         {
             return false;

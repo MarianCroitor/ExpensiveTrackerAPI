@@ -13,13 +13,18 @@ public class CategoryService : ICategoryService
     {
         _context = context;
     }
-    public async Task<List<Category>> GetCategoriesAsync()
+    public async Task<List<Category>> GetCategoriesAsync(int userId)
     {
-        return await _context.Categories.ToListAsync();
+        return await _context.Categories
+            .Include(c => c.Transactions)
+            .Where(c => c.UserId == userId)
+            .ToListAsync();
     }
 
-    public async Task<Category?> GetCategoryAsync(int id)
+    public async Task<Category?> GetCategoryAsync(int userId, int categoryId)
     {
-        return await _context.Categories.FindAsync(id);
+        return await _context.Categories
+            .Include(c => c.Transactions)
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.Id == categoryId);
     }
 }

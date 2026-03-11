@@ -1,9 +1,10 @@
+using ExpensiveTrackerAPI.DTOs;
 using ExpensiveTrackerAPI.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 namespace ExpensiveTrackerAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]") ]
+[Route("api/users/{userId:int}/categories")]
 public class CategoryController: ControllerBase
 {
     
@@ -15,26 +16,67 @@ public class CategoryController: ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCategories()
+    public async Task<IActionResult> GetCategories([FromRoute] int userId)
     {
-       var categories  = await  _categoryService.GetCategoriesAsync();
-       return Ok(categories);
+       if (userId <= 0)
+       {
+           return BadRequest();
+       }
+
+       var categories  = await  _categoryService.GetCategoriesAsync(userId);
+       if (categories.Count == 0)
+       {
+           return NotFound();
+       }
+
+       var result = categories.Select(c => new CategoryDto
+       {
+           Id = c.Id,
+           Name = c.Name,
+           Type = c.Type,
+           Transactions = c.Transactions.Select(t => new TransactionDto
+           {
+               Id = t.Id,
+               Amount = t.Amount,
+               Description = t.Description,
+               Date = t.Date,
+               CategoryId = t.CategoryId
+           }).ToList()
+       }).ToList();
+
+       return Ok(result);
 
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetCategory([FromRoute] int id)
+    public async Task<IActionResult> GetCategory([FromRoute] int userId, [FromRoute] int id)
     {
-        if (id <= 0)
+        if (userId <= 0 || id <= 0)
         {
             return BadRequest();
         }
-        var category = await _categoryService.GetCategoryAsync(id);
+        var category = await _categoryService.GetCategoryAsync(userId, id);
         if (category == null)
         {
             return NotFound();
         }
-        return Ok(category);
+
+        var result = new CategoryDto
+        {
+            Id = category.Id,
+            Name = category.Name,
+            Type = category.Type,
+            Transactions = category.Transactions.Select(t => new TransactionDto
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Description = t.Description,
+                Date = t.Date,
+                CategoryId = t.CategoryId
+            }).ToList()
+        };
+
+        return Ok(result);
     }
     
     
