@@ -1,0 +1,21 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  expensivetrackerapi:
+    build:
+      context: "/Users/marian/RiderProjects/ExpensiveTrackerAPI"
+      dockerfile: "Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net10.0/ExpensiveTrackerAPI.dll"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "expensivetrackerapi:dev"
+    ports: []
+    volumes:
+    - "/Users/marian/RiderProjects/ExpensiveTrackerAPI:/app:rw"
+    - "/Users/marian/RiderProjects/ExpensiveTrackerAPI:/src:rw"
+    - "/Users/marian/.nuget/packages:/home/app/.nuget/packages"
+    working_dir: "/app"
