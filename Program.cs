@@ -21,13 +21,14 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 
-var jwtKey = builder.Configuration["Jwt:Key"];
+// Get JWT key from environment variable (most secure), fallback to configuration
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
 var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
 {
-    throw new InvalidOperationException("JWT configuration is missing.");
+    throw new InvalidOperationException("JWT configuration is missing. Ensure JWT_KEY environment variable is set.");
 }
 
 builder.Services.AddAuthentication(options =>
